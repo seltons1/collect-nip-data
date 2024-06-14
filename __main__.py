@@ -29,15 +29,25 @@ FILE_LIST = ['PDA_NIP_2011.csv',
              'PDA_NIP_2023.csv']
 
 def download_file(download_type) -> None:
+    """
+
+    Download file from URL previously defined.
+    
+    """
 
     if download_type == 'ACTUAL_YEAR':
 
+        remove_old_file(RAW_PATH+FILE_NAME)
+
         wget.download(URL+FILE_NAME, RAW_PATH+FILE_NAME)
+        
 
     elif download_type == 'PREVIOUSLY_YEARS':
         
         for file in FILE_LIST:
-            
+
+            remove_old_file(RAW_PATH+file)
+
             wget.download(URL+file, RAW_PATH+file)
 
     else:
@@ -45,6 +55,11 @@ def download_file(download_type) -> None:
         print("Command not recognized")
 
 def read_file(file) -> pd.DataFrame:
+    """
+
+    Read .csv and return Dataframe
+    
+    """
 
     # Defining field types
     dtype = {"NUMERO_DA_DEMANDA" : 'int64',
@@ -72,23 +87,36 @@ def write_parquet() -> None:
     """
     files = os.listdir(RAW_PATH)
 
+    # Loop FILE_LIST to create .parquet to each file.
     for file in files:
 
+        # Read file and return dataframe.
         df = read_file(RAW_PATH + file)
 
+        # Remove extension file to create a .parquet name.
         file = file[:-4]
 
-        
-        
+        # write .parquet.
         df.to_parquet(SILVER_PATH+file + '.parquet' ,engine='pyarrow', compression='snappy')
+
+def remove_old_file(file):
+    """
+
+    Remove previously files
+    
+    """
+
+    if os.path.exists(file):
+
+        os.remove(file)
+
+    return True
 
 
 if __name__ == "__main__":
 
     # Download files, you can choice if you need download corrently year or previously years. Params : ['PREVIOUSLY_YEARS'] or ['ACTUAL_YEAR']
-    download_file('ACTUAL_YEAR')
+    download_file('PREVIOUSLY_YEARS')
 
-    
-    df = read_file(RAW_PATH + FILE_NAME)
-
+    # Write .parquet file
     write_parquet()
